@@ -54,7 +54,6 @@ class DeepmindLabEnv(gym.Env):
             super(DeepmindLabEnv, self).render(mode=mode) # just raise an exception
 
     def get_action_meanings(self):
-        english_names_of_actions = ['NOOP', 'look_left', 'look_right', 'strafe_left', 'strafe_right', 'forward', 'backward']
         return english_names_of_actions
 
 
@@ -67,12 +66,26 @@ ACTION_LIST = [
     _action( 20,   0,  0,  0, 0, 0, 0), # look_right
     #_action(  0,  10,  0,  0, 0, 0, 0), # look_up
     #_action(  0, -10,  0,  0, 0, 0, 0), # look_down
-    _action(  0,   0, -1,  0, 0, 0, 0), # strafe_left
-    _action(  0,   0,  1,  0, 0, 0, 0), # strafe_right
+    # _action(  0,   0, -1,  0, 0, 0, 0), # strafe_left
+    # _action(  0,   0,  1,  0, 0, 0, 0), # strafe_right
     _action(  0,   0,  0,  1, 0, 0, 0), # forward
-    _action(  0,   0,  0, -1, 0, 0, 0), # backward
+    # _action(  0,   0,  0, -1, 0, 0, 0), # backward
     #_action(  0,   0,  0,  0, 1, 0, 0), # fire
     #_action(  0,   0,  0,  0, 0, 1, 0), # jump
     #_action(  0,   0,  0,  0, 0, 0, 1)  # crouch
 ]
 
+english_names_of_actions = [
+    'NOOP',
+    'look_left',
+    'look_right',
+    # 'look_up',
+    # 'look_down',
+    # 'strafe_left',
+    # 'strafe_right',
+    'forward',
+    # 'backward',
+    # 'fire',
+    # 'jump',
+    # 'crouch',
+]
