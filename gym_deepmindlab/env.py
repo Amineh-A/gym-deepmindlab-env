@@ -5,6 +5,7 @@ import numpy as np
 import deepmind_lab
 from . import LEVELS, MAP
 
+
 class DeepmindLabEnv(gym.Env):
     metadata = {'render.modes': ['rgb_array']}
 
@@ -38,6 +39,8 @@ class DeepmindLabEnv(gym.Env):
 
     def seed(self, seed = None):
         self._lab.reset(seed=seed)
+        self.np_random, _ = seeding.np_random(seed)
+
 
     def close(self):
         self._lab.close()
@@ -50,10 +53,16 @@ class DeepmindLabEnv(gym.Env):
         else:
             super(DeepmindLabEnv, self).render(mode=mode) # just raise an exception
 
+    def get_action_meanings(self):
+        english_names_of_actions = ['NOOP', 'look_left', 'look_right', 'strafe_left', 'strafe_right', 'forward', 'backward']
+        return english_names_of_actions
+
+
 def _action(*entries):
   return np.array(entries, dtype=np.intc)
 
 ACTION_LIST = [
+    _action(0, 0, 0, 0, 0, 0, 0),  # noop
     _action(-20,   0,  0,  0, 0, 0, 0), # look_left
     _action( 20,   0,  0,  0, 0, 0, 0), # look_right
     #_action(  0,  10,  0,  0, 0, 0, 0), # look_up
@@ -66,3 +75,4 @@ ACTION_LIST = [
     #_action(  0,   0,  0,  0, 0, 1, 0), # jump
     #_action(  0,   0,  0,  0, 0, 0, 1)  # crouch
 ]
+

@@ -2,9 +2,9 @@
 Gym implementation of connector to Deepmind lab
 
 ## Getting Started
-Install the newest package by running:
+Install the newest package by running the following command from the parent directory.
 ```
-pip install gym_deepmindlab
+pip install -e gym-deepmindlab-env/
 ```
 
 In your project:
@@ -20,6 +20,7 @@ observation = env.reset()
 
 ## Suppoted Environments
 This is the list of supported environments:
+- DeepmindLabSoundTaskZero-v0
 - DeepmindLabLtChasm-v0
 - DeepmindLabLtHallwaySlope-v0
 - DeepmindLabLtHorseshoeColor-v0
@@ -31,6 +32,9 @@ This is the list of supported environments:
 - DeepmindLabNavMazeStatic02-v0
 - DeepmindLabSeekavoidArena01-v0
 - DeepmindLabStairwayToMelon-v0
+
+You can add new environments to `LEVELS` in `gym_deepmindlab/__init__.py`, and create them by calling `DeepmindLab<YourEnv>-v0`. 
+Note that `<YourEnv>` has to be CamelCased.
 
 ## Arguments
 You can specify the screen size when creating a new environment:
