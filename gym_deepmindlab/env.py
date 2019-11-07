@@ -35,8 +35,39 @@ class DeepmindLabEnv(gym.Env):
         self.total_reward = 0.0
         self.len = 0
         self.start = time.clock()
+        self.report_path = None
+        self.report_rank = 0
 
         # self.ale = atari_py.ALEInterface()
+
+    def set_report_path(self, path, rank):
+        self.report_path = path
+        self.report_rank = rank
+
+    def report(self, obs):
+        instr = obs['INSTR']
+        if instr:
+            instr = json.loads(instr)
+            for command_idx in range(1, instr['nCommands'] + 1):
+                command = instr['Command' + str(command_idx)]['Command']
+                if command == "Position":
+                    episode = instr['Command' + str(command_idx)]['Opt']['Num1']
+                    time = instr['Command' + str(command_idx)]['Opt']['Num2']
+                    pos = instr['Command' + str(command_idx)]['Opt']['String1']
+                    with open(self.report_path + "/report_" + str(self.report_rank) + '.txt', 'a') as f:
+                        f.write("episode: {}\t time: {} \tPosition: {}\n".format(episode, time, pos))
+                elif command == "Pickup":
+                    episode = instr['Command' + str(command_idx)]['Opt']['Num1']
+                    time = instr['Command' + str(command_idx)]['Opt']['Num2']
+                    name = instr['Command' + str(command_idx)]['Opt']['String1']
+                    with open(self.report_path + "/report_" + str(self.report_rank) + '.txt', 'a') as f:
+                        f.write("episode: {}\t time: {} \tPickup: {}\n".format(episode, time, name))
+                elif command == "Timeout":
+                    episode = instr['Command' + str(command_idx)]['Opt']['Num1']
+                    time = instr['Command' + str(command_idx)]['Opt']['Num2']
+                    with open(self.report_path + "/report_" + str(self.report_rank) + '.txt', 'a') as f:
+                        f.write("episode: {}\t time: {} \tTimeout\n".format(episode, time))
+
 
     def done(self, obs):
         instr = obs['INSTR']
@@ -59,6 +90,7 @@ class DeepmindLabEnv(gym.Env):
         self._last_observation = obs[self._colors] if obs[self._colors] is not None else self._last_observation
         reward = self._lab.step(ACTION_LIST[action], num_steps=1)
         done = self.done(obs)
+        self.report(obs)
         self.len += 1
         self.total_reward += reward
         if done:
