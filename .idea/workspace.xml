@@ -37,7 +37,7 @@
         <entry file="file://$PROJECT_DIR$/gym_deepmindlab/env.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="790">
-              <caret line="67" column="96" selection-start-line="67" selection-start-column="96" selection-end-line="67" selection-end-column="96" />
+              <caret line="67" column="33" selection-start-line="67" selection-start-column="33" selection-end-line="67" selection-end-column="33" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -153,12 +153,12 @@
       <updated>1572624382808</updated>
       <workItem from="1572624384736" duration="8838000" />
       <workItem from="1572787133887" duration="10851000" />
-      <workItem from="1572974199155" duration="23689000" />
+      <workItem from="1572974199155" duration="23918000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="43378000" />
+    <option name="totallyTimeSpent" value="43607000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-294" y="-1200" width="1920" height="1200" extended-state="0" />
@@ -288,7 +288,7 @@
     <entry file="file://$PROJECT_DIR$/gym_deepmindlab/env.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="790">
-          <caret line="67" column="96" selection-start-line="67" selection-start-column="96" selection-end-line="67" selection-end-column="96" />
+          <caret line="67" column="33" selection-start-line="67" selection-start-column="33" selection-end-line="67" selection-end-column="33" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>

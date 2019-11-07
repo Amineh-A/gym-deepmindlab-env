@@ -63,10 +63,9 @@ class DeepmindLabEnv(gym.Env):
                     with open(self.report_path + "/report_" + str(self.report_rank) + '.txt', 'a') as f:
                         f.write("episode: {}\t time: {} \tPickup: {}\n".format(episode, time, name))
                 elif command == "Timeout":
-                    episode = instr['Command' + str(command_idx)]['Opt']['Num1']
-                    time = instr['Command' + str(command_idx)]['Opt']['Num2']
+                    time = instr['Command' + str(command_idx)]['Opt']['Num1']
                     with open(self.report_path + "/report_" + str(self.report_rank) + '.txt', 'a') as f:
-                        f.write("episode: {}\t time: {} \tTimeout\n".format(episode, time))
+                        f.write("time: {} \tTimeout\n".format(time))
 
 
     def done(self, obs):
