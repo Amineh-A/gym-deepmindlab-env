@@ -5,7 +5,10 @@ import numpy as np
 import deepmind_lab
 from . import LEVELS, MAP
 import time
+import datetime
 import json
+import csv
+import os
 
 try:
     import atari_py
@@ -38,35 +41,96 @@ class DeepmindLabEnv(gym.Env):
         self.report_path = None
         self.report_rank = 0
 
+        self.sound_on = None
+        self.distractor_on = None
+        self.rat_left_base_during_reward_time = False
+        self.episode = 0
+        self.position = "base1"
+        self.missed_counter = 0
+        self.early_counter = 0
+        self.late_counter = 0
+        self.correct_counter = 0
+
+
         # self.ale = atari_py.ALEInterface()
 
     def set_report_path(self, path, rank):
         self.report_path = path
         self.report_rank = rank
+        if not os.path.exists(self.report_path):
+            os.mkdir(self.report_path)
 
-    def report(self, obs):
+    def write_to_file(self, type_event, seconds):
+        csv_name = str(self.report_path) + '/rat' + str(self.report_rank) + '_' + str(self.episode) + '.csv'
+        if not os.path.exists(csv_name):
+            with open(csv_name, 'w', newline='') as csvfile:
+                spamwriter = csv.writer(csvfile, delimiter=',',
+                                        quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                spamwriter.writerow(['time_stamp', 'event', 'missed', 'early', 'late', 'correct'])
+        with open(csv_name, 'a') as fd:
+            writer = csv.writer(fd)
+            seconds = int(seconds)
+            h = str(seconds // 3600)
+            m = str((seconds % 3600) // 60)
+            s = str((seconds % 3600) % 60)
+            writer.writerow([str(self.episode) + "_" + h + ":" + m + ":" + s,
+                             type_event, self.missed_counter, self.early_counter, self.late_counter, self.correct_counter])
+
+    def process_command(self, obs):
+        if self.report_path is None:
+            return
         instr = obs['INSTR']
         if instr:
             instr = json.loads(instr)
             for command_idx in range(1, instr['nCommands'] + 1):
                 command = instr['Command' + str(command_idx)]['Command']
                 if command == "Position":
-                    episode = instr['Command' + str(command_idx)]['Opt']['Num1']
+                    self.episode = int(instr['Command' + str(command_idx)]['Opt']['Num1'])
                     time = instr['Command' + str(command_idx)]['Opt']['Num2']
-                    pos = instr['Command' + str(command_idx)]['Opt']['String1']
-                    with open(self.report_path + "/report_" + str(self.report_rank) + '.txt', 'a') as f:
-                        f.write("episode: {}\t time: {} \tPosition: {}\n".format(episode, time, pos))
+                    new_position = instr['Command' + str(command_idx)]['Opt']['String1']
+                    if self.position == "base1" and new_position == "corridor":
+                        self.write_to_file("not_in_base", time)
+                        if self.sound_on:
+                            self.rat_left_base_during_reward_time = True
+                            self.write_to_file("rat_left_base_during_reward_time", time)
+                        else:
+                            self.early_counter += 1
+                            self.write_to_file("left_early", time)
+                    if self.position == "corridor" and new_position == "base1":
+                        self.write_to_file("in_base", time)
+                    self.position = new_position
+
                 elif command == "Pickup":
-                    episode = instr['Command' + str(command_idx)]['Opt']['Num1']
+                    self.episode = int(instr['Command' + str(command_idx)]['Opt']['Num1'])
                     time = instr['Command' + str(command_idx)]['Opt']['Num2']
                     name = instr['Command' + str(command_idx)]['Opt']['String1']
-                    with open(self.report_path + "/report_" + str(self.report_rank) + '.txt', 'a') as f:
-                        f.write("episode: {}\t time: {} \tPickup: {}\n".format(episode, time, name))
+                    self.correct_counter += 1
+                    self.late_counter -= 1
+                    self.write_to_file("correct_trial", time)
+
                 elif command == "Timeout":
                     time = instr['Command' + str(command_idx)]['Opt']['Num1']
-                    with open(self.report_path + "/report_" + str(self.report_rank) + '.txt', 'a') as f:
-                        f.write("time: {} \tTimeout\n".format(time))
+                    # with open(self.report_path + "/report_" + str(self.report_rank) + '.txt', 'a') as f:
+                    #     f.write("time: {} \tTimeout\n".format(time))
 
+                elif command == "IndicationStatus":
+                    self.episode = instr['Command' + str(command_idx)]['Opt']['Num1']
+                    time = instr['Command' + str(command_idx)]['Opt']['Num2']
+                    status = instr['Command' + str(command_idx)]['Opt']['String1']
+                    # with open(self.report_path + "/report_" + str(self.report_rank) + '.txt', 'a') as f:
+                    #     f.write("episode: {} \t time: {} \tSound: {}\n".format(episode, time, status))
+                    if status == "on":
+                        self.sound_on = True
+                        self.write_to_file("reward_time_started", time)
+                    else:
+                        self.sound_on = False
+                        if self.rat_left_base_during_reward_time:
+                            self.late_counter += 1
+                            self.rat_left_base_during_reward_time = False
+                            self.write_to_file("correct_or_late", time)
+                        elif self.position == "base1":  # and not self.rat_left_base_during_reward_time:
+                            self.missed_counter += 1
+                            self.write_to_file("missed_trial", time)
 
     def done(self, obs):
         instr = obs['INSTR']
@@ -80,27 +144,33 @@ class DeepmindLabEnv(gym.Env):
 
     def step(self, action):
         if not self._lab.is_running():
-            infos = {'episode': {'r': self.total_reward,
+            infos = {'sound_status': self.sound_on,
+                     'distractor_status': self.distractor_on,
+                     'episode': {'r': self.total_reward,
                                  'l': self.len,
-                                 't': time.clock() - self.start}}
+                                 't': time.time() - self.start}}
             self.reset()
             return self._last_observation, 0.0, False, infos
         obs = self._lab.observations()
         self._last_observation = obs[self._colors] if obs[self._colors] is not None else self._last_observation
         reward = self._lab.step(ACTION_LIST[action], num_steps=1)
         done = self.done(obs)
-        self.report(obs)
+        self.process_command(obs)
         self.len += 1
         self.total_reward += reward
         if done:
-            infos = {'episode': {'r': self.total_reward,
+            infos = {'sound_status': self.sound_on,
+                     'distractor_status': self.distractor_on,
+                     'episode': {'r': self.total_reward,
                                  'l': self.len,
-                                 't': time.clock() - self.start}}
+                                 't': time.time() - self.start}}
             self.total_reward = 0.0
             self.len = 0
-            self.start = time.clock()
+            self.start = time.time()
+            self.episode += 1
         else:
-            infos = dict()
+            infos = {'sound_status': self.sound_on,
+                     'distractor_status': self.distractor_on,}
         return self._last_observation, reward, done, infos
 
     def reset(self):
@@ -109,9 +179,16 @@ class DeepmindLabEnv(gym.Env):
             self._lab.reset()
         self._lab.step(ACTION_LIST[0], num_steps=1)
         self._last_observation = self._lab.observations()[self._colors]
-        self.start = time.clock()
+        self.start = time.time()
         self.total_reward = 0.0
         self.len = 0
+
+        self.episode = 0
+        self.position = "base1"
+        self.missed_counter = 0
+        self.early_counter = 0
+        self.late_counter = 0
+        self.correct_counter = 0
         return self._last_observation
 
     def seed(self, seed=None):
