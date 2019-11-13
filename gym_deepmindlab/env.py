@@ -44,12 +44,15 @@ class DeepmindLabEnv(gym.Env):
         self.sound_on = None
         self.distractor_on = None
         self.rat_left_base_during_reward_time = False
+        self.rat_left_during_distractor = False
         self.episode = 0
         self.position = "base1"
         self.missed_counter = 0
         self.early_counter = 0
         self.late_counter = 0
         self.correct_counter = 0
+        self.distractor_counter = 0
+        self.correct_distractor_counter = 0
 
 
         # self.ale = atari_py.ALEInterface()
@@ -66,7 +69,7 @@ class DeepmindLabEnv(gym.Env):
             with open(csv_name, 'w', newline='') as csvfile:
                 spamwriter = csv.writer(csvfile, delimiter=',',
                                         quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                spamwriter.writerow(['time_stamp', 'event', 'missed', 'early', 'late', 'correct'])
+                spamwriter.writerow(['time_stamp', 'event', 'missed', 'early', 'late', 'distracted', 'dist.OK', 'correct'])
         with open(csv_name, 'a') as fd:
             writer = csv.writer(fd)
             seconds = int(seconds)
@@ -74,7 +77,8 @@ class DeepmindLabEnv(gym.Env):
             m = str((seconds % 3600) // 60)
             s = str((seconds % 3600) % 60)
             writer.writerow([str(self.episode) + "_" + h + ":" + m + ":" + s,
-                             type_event, self.missed_counter, self.early_counter, self.late_counter, self.correct_counter])
+                             type_event, self.missed_counter, self.early_counter, self.late_counter,
+                             self.distractor_counter, self.correct_distractor_counter, self.correct_counter])
 
     def process_command(self, obs):
         if self.report_path is None:
@@ -88,15 +92,23 @@ class DeepmindLabEnv(gym.Env):
                     self.episode = int(instr['Command' + str(command_idx)]['Opt']['Num1'])
                     time = instr['Command' + str(command_idx)]['Opt']['Num2']
                     new_position = instr['Command' + str(command_idx)]['Opt']['String1']
+                    # todo: remove
+                    with open(self.report_path + '/report.txt', 'a') as f:
+                        f.write("pos: " + new_position + " time: " + str(time))
+
                     if self.position == "base1" and new_position == "corridor":
                         self.write_to_file("not_in_base", time)
                         if self.sound_on:
                             self.rat_left_base_during_reward_time = True
                             self.write_to_file("rat_left_base_during_reward_time", time)
+                        elif self.distractor_on:
+                            self.distractor_counter += 1
+                            self.rat_left_during_distractor = True
+                            self.write_to_file("rat_left_during_distractor", time)
                         else:
                             self.early_counter += 1
                             self.write_to_file("left_early", time)
-                    if self.position == "corridor" and new_position == "base1":
+                    if self.position != "base1" and new_position == "base1":
                         self.write_to_file("in_base", time)
                     self.position = new_position
 
@@ -110,19 +122,15 @@ class DeepmindLabEnv(gym.Env):
 
                 elif command == "Timeout":
                     time = instr['Command' + str(command_idx)]['Opt']['Num1']
-                    # with open(self.report_path + "/report_" + str(self.report_rank) + '.txt', 'a') as f:
-                    #     f.write("time: {} \tTimeout\n".format(time))
 
                 elif command == "IndicationStatus":
                     self.episode = instr['Command' + str(command_idx)]['Opt']['Num1']
                     time = instr['Command' + str(command_idx)]['Opt']['Num2']
                     status = instr['Command' + str(command_idx)]['Opt']['String1']
-                    # with open(self.report_path + "/report_" + str(self.report_rank) + '.txt', 'a') as f:
-                    #     f.write("episode: {} \t time: {} \tSound: {}\n".format(episode, time, status))
-                    if status == "on":
+                    if status == "sound_on":
                         self.sound_on = True
                         self.write_to_file("reward_time_started", time)
-                    else:
+                    elif status == "sound_off":
                         self.sound_on = False
                         if self.rat_left_base_during_reward_time:
                             self.late_counter += 1
@@ -131,6 +139,15 @@ class DeepmindLabEnv(gym.Env):
                         elif self.position == "base1":  # and not self.rat_left_base_during_reward_time:
                             self.missed_counter += 1
                             self.write_to_file("missed_trial", time)
+
+                    elif status == "distractor_on":
+                        self.distractor_on = True
+                        self.write_to_file("distractor_time_started", time)
+                    elif status == "distractor_off":
+                        self.distractor_on = False
+                        if not self.rat_left_during_distractor:
+                            self.correct_distractor_counter += 1
+                            self.write_to_file("distractor_avoided", time)
 
     def done(self, obs):
         instr = obs['INSTR']
@@ -183,12 +200,18 @@ class DeepmindLabEnv(gym.Env):
         self.total_reward = 0.0
         self.len = 0
 
+        self.sound_on = None
+        self.distractor_on = None
+        self.rat_left_base_during_reward_time = False
+        self.rat_left_during_distractor = False
         self.episode = 0
         self.position = "base1"
         self.missed_counter = 0
         self.early_counter = 0
         self.late_counter = 0
         self.correct_counter = 0
+        self.distractor_counter = 0
+        self.correct_distractor_counter = 0
         return self._last_observation
 
     def seed(self, seed=None):
