@@ -92,9 +92,6 @@ class DeepmindLabEnv(gym.Env):
                     self.episode = int(instr['Command' + str(command_idx)]['Opt']['Num1'])
                     time = instr['Command' + str(command_idx)]['Opt']['Num2']
                     new_position = instr['Command' + str(command_idx)]['Opt']['String1']
-                    # todo: remove
-                    with open(self.report_path + '/report.txt', 'a') as f:
-                        f.write("pos: " + new_position + " time: " + str(time))
 
                     if self.position == "base1" and new_position == "corridor":
                         self.write_to_file("not_in_base", time)

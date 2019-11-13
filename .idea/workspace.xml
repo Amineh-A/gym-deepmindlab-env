@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4d0d1a58-6805-4160-8e67-fc25e6bd2878" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gym_deepmindlab/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/gym_deepmindlab/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gym_deepmindlab/env.py" beforeDir="false" afterPath="$PROJECT_DIR$/gym_deepmindlab/env.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -35,11 +33,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/gym_deepmindlab/env.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="218">
-              <caret line="129" column="63" selection-start-line="129" selection-start-column="44" selection-end-line="129" selection-end-column="63" />
+            <state relative-caret-position="203">
+              <caret line="93" column="88" selection-start-line="93" selection-start-column="88" selection-end-line="93" selection-end-column="88" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -68,7 +66,7 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/gym_deepmindlab/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="60">
@@ -180,12 +178,12 @@
       <workItem from="1572624384736" duration="8838000" />
       <workItem from="1572787133887" duration="10851000" />
       <workItem from="1572974199155" duration="33948000" />
-      <workItem from="1573570774753" duration="19066000" />
+      <workItem from="1573570774753" duration="19312000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="72703000" />
+    <option name="totallyTimeSpent" value="72949000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
@@ -336,20 +334,20 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/gym_deepmindlab/env.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="218">
-          <caret line="129" column="63" selection-start-line="129" selection-start-column="44" selection-end-line="129" selection-end-column="63" />
-          <folding>
-            <element signature="e#0#10#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/gym_deepmindlab/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="60">
           <caret line="4" column="117" selection-start-line="4" selection-start-column="117" selection-end-line="4" selection-end-column="117" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gym_deepmindlab/env.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="203">
+          <caret line="93" column="88" selection-start-line="93" selection-start-column="88" selection-end-line="93" selection-end-column="88" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
