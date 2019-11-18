@@ -105,7 +105,7 @@ class DeepmindLabEnv(gym.Env):
                         else:
                             self.early_counter += 1
                             self.write_to_file("left_early", time)
-                    if self.position != "base1" and new_position == "base1":
+                    if self.position == "corridor" and new_position == "base1":
                         self.write_to_file("in_base", time)
                     self.position = new_position
 
