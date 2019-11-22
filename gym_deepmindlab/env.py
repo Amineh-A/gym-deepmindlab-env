@@ -54,6 +54,13 @@ class DeepmindLabEnv(gym.Env):
         self.distractor_counter = 0
         self.correct_distractor_counter = 0
 
+        if "Sound" in scene or "sound" in scene:
+            self.write_to_file = self.write_to_file_sound
+            self.process_command = self.process_command_sound
+        elif "Memory" in scene or "memory" in scene:
+            self.process_command = self.process_command_memory
+            self.write_to_file = self.write_to_file_memory
+
 
         # self.ale = atari_py.ALEInterface()
 
@@ -63,7 +70,7 @@ class DeepmindLabEnv(gym.Env):
         if not os.path.exists(self.report_path):
             os.mkdir(self.report_path)
 
-    def write_to_file(self, type_event, seconds):
+    def write_to_file_sound(self, type_event, seconds):
         csv_name = str(self.report_path) + '/rat' + str(self.report_rank) + '_' + str(self.episode) + '.csv'
         if not os.path.exists(csv_name):
             with open(csv_name, 'w', newline='') as csvfile:
@@ -80,7 +87,7 @@ class DeepmindLabEnv(gym.Env):
                              type_event, self.missed_counter, self.early_counter, self.late_counter,
                              self.distractor_counter, self.correct_distractor_counter, self.correct_counter])
 
-    def process_command(self, obs):
+    def process_command_sound(self, obs):
         if self.report_path is None:
             return
         instr = obs['INSTR']
@@ -145,6 +152,64 @@ class DeepmindLabEnv(gym.Env):
                         if not self.rat_left_during_distractor:
                             self.correct_distractor_counter += 1
                             self.write_to_file("distractor_avoided", time)
+
+    def write_to_file_memory(self, type_event, seconds):
+        csv_name = str(self.report_path) + '/rat' + str(self.report_rank) + '_' + str(self.episode) + '.csv'
+        if not os.path.exists(csv_name):
+            with open(csv_name, 'w', newline='') as csvfile:
+                spamwriter = csv.writer(csvfile, delimiter=',',
+                                        quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                spamwriter.writerow(['time_stamp', 'event', 'missed', 'correct'])
+        with open(csv_name, 'a') as fd:
+            writer = csv.writer(fd)
+            seconds = int(seconds)
+            h = str(seconds // 3600)
+            m = str((seconds % 3600) // 60)
+            s = str((seconds % 3600) % 60)
+            writer.writerow([str(self.episode) + "_" + h + ":" + m + ":" + s,
+                             type_event, self.missed_counter, self.correct_counter])
+
+    def process_command_memory(self, obs):
+        if self.report_path is None:
+            return
+        instr = obs['INSTR']
+        if instr:
+            instr = json.loads(instr)
+            for command_idx in range(1, instr['nCommands'] + 1):
+                command = instr['Command' + str(command_idx)]['Command']
+
+                if command == "Position":
+                    self.episode = int(instr['Command' + str(command_idx)]['Opt']['Num1'])
+                    time = int(instr['Command' + str(command_idx)]['Opt']['Num2'])
+                    self.position = instr['Command' + str(command_idx)]['Opt']['String1']
+
+                    self.write_to_file(self.position, time)
+
+                elif command == "Pickup":
+                    self.episode = int(instr['Command' + str(command_idx)]['Opt']['Num1'])
+                    time = int(instr['Command' + str(command_idx)]['Opt']['Num2'])
+                    name = instr['Command' + str(command_idx)]['Opt']['String1']
+                    self.correct_counter += 1
+                    self.write_to_file("Picked up " + name, time)
+
+                elif command == "DoorStatus":
+                    self.episode = int(instr['Command' + str(command_idx)]['Opt']['Num1'])
+                    time = int(instr['Command' + str(command_idx)]['Opt']['Num2'])
+                    name = instr['Command' + str(command_idx)]['Opt']['String1']
+                    status = instr['Command' + str(command_idx)]['Opt']['String2']
+                    self.write_to_file(name + ' ' + status, time)
+
+                elif command == "SetReward":
+                    self.episode = int(instr['Command' + str(command_idx)]['Opt']['Num1'])
+                    time = int(instr['Command' + str(command_idx)]['Opt']['Num2'])
+                    name = instr['Command' + str(command_idx)]['Opt']['String1']
+                    self.write_to_file("Set reward " + name, time)
+
+                elif command == "LostReward":
+                    self.episode = int(instr['Command' + str(command_idx)]['Opt']['Num1'])
+                    time = int(instr['Command' + str(command_idx)]['Opt']['Num2'])
+                    name = instr['Command' + str(command_idx)]['Opt']['String1']
+                    self.write_to_file("Lost reward " + name, time)
 
     def done(self, obs):
         instr = obs['INSTR']
