@@ -18,6 +18,10 @@ except ImportError as e:
         "'pip install gym[atari]'.)".format(e))
 
 
+def time_in_seconds(time):
+    return (int(time) % 3600) % 60
+
+
 class DeepmindLabEnv(gym.Env):
     metadata = {'render.modes': ['rgb_array']}
 
@@ -43,6 +47,8 @@ class DeepmindLabEnv(gym.Env):
 
         self.sound_on = None
         self.distractor_on = None
+        self.distractor_start_time = 0
+        self.distractor_stop_time = -5
         self.rat_left_base_during_reward_time = False
         self.rat_left_during_distractor = False
         self.episode = 0
@@ -87,6 +93,8 @@ class DeepmindLabEnv(gym.Env):
                              type_event, self.missed_counter, self.early_counter, self.late_counter,
                              self.distractor_counter, self.correct_distractor_counter, self.correct_counter])
 
+
+
     def process_command_sound(self, obs):
         if self.report_path is None:
             return
@@ -105,10 +113,13 @@ class DeepmindLabEnv(gym.Env):
                         if self.sound_on:
                             self.rat_left_base_during_reward_time = True
                             self.write_to_file("rat_left_base_during_reward_time", time)
-                        elif self.distractor_on:
+                        elif self.distractor_on or \
+                                (self.distractor_stop_time - self.distractor_start_time < 5
+                                 and self.distractor_stop_time >= self.distractor_start_time):
                             self.distractor_counter += 1
                             self.rat_left_during_distractor = True
                             self.write_to_file("rat_left_during_distractor", time)
+                            self.distractor_stop_time = self.distractor_start_time + 5
                         else:
                             self.early_counter += 1
                             self.write_to_file("left_early", time)
@@ -146,10 +157,12 @@ class DeepmindLabEnv(gym.Env):
 
                     elif status == "distractor_on":
                         self.distractor_on = True
+                        self.distractor_start_time = time_in_seconds(time)
                         self.write_to_file("distractor_time_started", time)
                     elif status == "distractor_off":
                         self.distractor_on = False
-                        if not self.rat_left_during_distractor:
+                        self.distractor_stop_time = time_in_seconds(time)
+                        if not self.rat_left_during_distractor and self.distractor_stop_time - self.distractor_start_time >= 5:
                             self.correct_distractor_counter += 1
                             self.write_to_file("distractor_avoided", time)
 
