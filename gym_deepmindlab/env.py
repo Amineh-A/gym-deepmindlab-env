@@ -119,7 +119,7 @@ class DeepmindLabEnv(gym.Env):
                             self.distractor_counter += 1
                             self.rat_left_during_distractor = True
                             self.write_to_file("rat_left_during_distractor", time)
-                            self.distractor_stop_time = self.distractor_start_time + 5
+                            self.distractor_stop_time = (self.distractor_start_time + 5) % 60
                         else:
                             self.early_counter += 1
                             self.write_to_file("left_early", time)
@@ -157,6 +157,7 @@ class DeepmindLabEnv(gym.Env):
 
                     elif status == "distractor_on":
                         self.distractor_on = True
+                        self.rat_left_during_distractor = False
                         self.distractor_start_time = time_in_seconds(time)
                         self.write_to_file("distractor_time_started", time)
                     elif status == "distractor_off":
