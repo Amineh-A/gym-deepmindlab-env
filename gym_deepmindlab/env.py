@@ -63,6 +63,9 @@ class DeepmindLabEnv(gym.Env):
         if "Sound" in scene or "sound" in scene:
             self.write_to_file = self.write_to_file_sound
             self.process_command = self.process_command_sound
+        elif "nose" in scene or "Nose" in scene:
+            self.write_to_file = self.write_to_file_nose_poke
+            self.process_command = self.process_command_nose_poke
         elif "Memory" in scene or "memory" in scene:
             self.process_command = self.process_command_memory
             self.write_to_file = self.write_to_file_memory
@@ -92,8 +95,6 @@ class DeepmindLabEnv(gym.Env):
             writer.writerow([str(self.episode) + "_" + h + ":" + m + ":" + s,
                              type_event, self.missed_counter, self.early_counter, self.late_counter,
                              self.distractor_counter, self.correct_distractor_counter, self.correct_counter])
-
-
 
     def process_command_sound(self, obs):
         if self.report_path is None:
@@ -152,6 +153,92 @@ class DeepmindLabEnv(gym.Env):
                             self.rat_left_base_during_reward_time = False
                             self.write_to_file("correct_or_late", time)
                         elif self.position == "base1":  # and not self.rat_left_base_during_reward_time:
+                            self.missed_counter += 1
+                            self.write_to_file("missed_trial", time)
+
+                    elif status == "distractor_on":
+                        self.distractor_on = True
+                        self.rat_left_during_distractor = False
+                        self.distractor_start_time = time_in_seconds(time)
+                        self.write_to_file("distractor_time_started", time)
+                    elif status == "distractor_off":
+                        self.distractor_on = False
+                        self.distractor_stop_time = time_in_seconds(time)
+                        if not self.rat_left_during_distractor and self.distractor_stop_time - self.distractor_start_time >= 5:
+                            self.correct_distractor_counter += 1
+                            self.write_to_file("distractor_avoided", time)
+
+    def write_to_file_nose_poke(self, type_event, seconds):
+        csv_name = str(self.report_path) + '/rat' + str(self.report_rank) + '_' + str(self.episode) + '.csv'
+        if not os.path.exists(csv_name):
+            with open(csv_name, 'w', newline='') as csvfile:
+                spamwriter = csv.writer(csvfile, delimiter=',',
+                                        quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                spamwriter.writerow(['time_stamp', 'event', 'missed', 'early', 'distracted', 'dist.OK', 'correct'])
+        with open(csv_name, 'a') as fd:
+            writer = csv.writer(fd)
+            seconds = int(seconds)
+            h = str(seconds // 3600)
+            m = str((seconds % 3600) // 60)
+            s = str((seconds % 3600) % 60)
+            writer.writerow([str(self.episode) + "_" + h + ":" + m + ":" + s,
+                             type_event, self.missed_counter, self.early_counter,
+                             self.distractor_counter, self.correct_distractor_counter, self.correct_counter])
+
+    def process_command_nose_poke(self, obs):
+        if self.report_path is None:
+            return
+        instr = obs['INSTR']
+        if instr:
+            instr = json.loads(instr)
+            for command_idx in range(1, instr['nCommands'] + 1):
+                command = instr['Command' + str(command_idx)]['Command']
+                if command == "Position":
+                    self.episode = int(instr['Command' + str(command_idx)]['Opt']['Num1'])
+                    time = instr['Command' + str(command_idx)]['Opt']['Num2']
+                    new_position = instr['Command' + str(command_idx)]['Opt']['String1']
+
+                    if self.position == "base1" and new_position == "nose_poke":
+                        self.write_to_file("not_in_base", time)
+                        if self.sound_on:
+                            self.rat_left_base_during_reward_time = True
+                            self.write_to_file("rat_left_base_during_reward_time", time)
+                        elif self.distractor_on:
+                            self.distractor_counter += 1
+                            self.rat_left_during_distractor = True
+                            self.write_to_file("rat_left_during_distractor", time)
+                        else:
+                            self.early_counter += 1
+                            self.write_to_file("left_early", time)
+                    if self.position == "nose_poke" and new_position == "base1":
+                        self.write_to_file("in_base", time)
+                    self.position = new_position
+
+                elif command == "Pickup":
+                    self.episode = int(instr['Command' + str(command_idx)]['Opt']['Num1'])
+                    time = instr['Command' + str(command_idx)]['Opt']['Num2']
+                    name = instr['Command' + str(command_idx)]['Opt']['String1']
+                    self.correct_counter += 1
+                    self.write_to_file("correct_trial", time)
+
+                elif command == "Timeout":
+                    time = instr['Command' + str(command_idx)]['Opt']['Num1']
+
+                elif command == "IndicationStatus":
+                    self.episode = instr['Command' + str(command_idx)]['Opt']['Num1']
+                    time = instr['Command' + str(command_idx)]['Opt']['Num2']
+                    status = instr['Command' + str(command_idx)]['Opt']['String1']
+                    if status == "sound_on":
+                        self.sound_on = True
+                        self.rat_left_base_during_reward_time = False
+                        self.reward_start_time = time_in_seconds(time)
+                        self.write_to_file("reward_time_started", time)
+                    elif status == "sound_off":
+                        self.sound_on = False
+                        self.reward_stop_time = time_in_seconds(time)
+                        if self.rat_left_base_during_reward_time:
+                            self.rat_left_base_during_reward_time = False
+                        elif self.reward_stop_time - self.reward_start_time >= 5:
                             self.missed_counter += 1
                             self.write_to_file("missed_trial", time)
 
